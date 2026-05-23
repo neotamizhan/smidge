@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:smidge/data/fx_service.dart';
 import '../design/colors.dart';
 import '../design/sk_widgets.dart';
 import '../design/doodles.dart';
 import '../data/convert.dart';
+import '../data/fx_service.dart';
 import '../data/format.dart';
 import 'keypad.dart';
 

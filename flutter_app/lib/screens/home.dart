@@ -51,7 +51,6 @@ class ScrHome extends StatelessWidget {
     }
 
     return Paper(
-      
       child: Column(
         children: [
           Padding(

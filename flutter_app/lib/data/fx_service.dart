@@ -8,8 +8,21 @@ const _kTimestampKey = 'fx_rates_ts';
 const _kMaxAgeMs = 4 * 60 * 60 * 1000; // 4 hours
 
 class FxService {
-  static const _required = ['EUR','GBP','INR','JPY','CAD','AUD',
-                           'CHF','CNY','MXN','BRL','SGD','AED','KRW'];
+  static const _required = [
+    'EUR',
+    'GBP',
+    'INR',
+    'JPY',
+    'CAD',
+    'AUD',
+    'CHF',
+    'CNY',
+    'MXN',
+    'BRL',
+    'SGD',
+    'AED',
+    'KRW'
+  ];
 
   static Future<Map<String, double>> getRates() async {
     final prefs = await SharedPreferences.getInstance();
@@ -63,17 +76,18 @@ class FxService {
   }
 
   static Map<String, double>? _safeParse(String json) {
-  try {
-    final data = jsonDecode(json) as Map<String, dynamic>;
-    final rates = Map<String, double>.from(
-      (data['rates'] as Map).map((k, v) => MapEntry(k, (v as num).toDouble())),
-    );
-    rates['USD'] = 1.0;
-    return rates;
-  } catch (_) {
-    return null; // corrupted cache → null
+    try {
+      final data = jsonDecode(json) as Map<String, dynamic>;
+      final rates = Map<String, double>.from(
+        (data['rates'] as Map)
+            .map((k, v) => MapEntry(k, (v as num).toDouble())),
+      );
+      rates['USD'] = 1.0;
+      return rates;
+    } catch (_) {
+      return null; // corrupted cache → null
+    }
   }
-}
 
   static Map<String, double> _bundled() {
     return {

@@ -12,7 +12,6 @@ dependencies:
     sdk: flutter
   shared_preferences: ^2.2.2
   google_fonts: ^6.2.1
-  wakelock_plus: ^1.6.1
   http: ^1.6.0
 
 dev_dependencies:
