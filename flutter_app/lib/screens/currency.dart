@@ -43,16 +43,17 @@ class _ScrCurrencyState extends State<ScrCurrency> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadRates();
   }
 
   Future<void> _loadRates() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     _rates = await FxService.getRates();
     _lastUpdated = await FxService.lastUpdated();
     _isLive = _lastUpdated != null;
+    if (!mounted) return;
     setState(() => _loading = false);
   }
 
