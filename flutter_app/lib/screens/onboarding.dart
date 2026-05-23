@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smidge/design/extensions.dart';
 import '../design/colors.dart';
 import '../design/sk_widgets.dart';
 import '../design/doodles.dart';
@@ -395,12 +396,13 @@ class ScrPref extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => onChange(o[0] as String),
                       child: SkBox(
-                        height: 64,
+                        height: MediaQuery.of(context).size.height * 0.1,
                         padding: const EdgeInsets.all(14),
                         stroke: on ? C.terra : C.inkSoft,
                         fill: on ? C.terra.withValues(alpha: 0.07) : null,
                         child: Row(
                           children: [
+                            12.ww,
                             Doodle(o[3] as DoodleKind, size: 32),
                             const SizedBox(width: 14),
                             Expanded(
@@ -421,6 +423,7 @@ class ScrPref extends StatelessWidget {
                               ),
                             ),
                             _Check(on: on),
+                            12.ww,
                           ],
                         ),
                       ),
