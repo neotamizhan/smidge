@@ -57,7 +57,6 @@ class _ScrMedicalState extends State<ScrMedical> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 4),
             child: Row(

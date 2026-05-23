@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../design/colors.dart';
 import '../design/sk_widgets.dart';
+import '../design/smidge_glyph.dart';
 import '../design/doodles.dart';
 import '../data/units.dart';
 import '../data/convert.dart';
@@ -53,11 +54,12 @@ class ScrHome extends StatelessWidget {
       
       child: Column(
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
             child: Row(
               children: [
+                const SmidgeGlyph(size: 30),
+                const SizedBox(width: 8),
                 const SmidgeMark(),
                 const Spacer(),
                 GestureDetector(

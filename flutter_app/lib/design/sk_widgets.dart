@@ -34,10 +34,12 @@ class SkBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final w = Container(
+    // The border (CustomPaint) is drawn at the outer edge; the padding sits
+    // INSIDE the border so content is comfortably contained within the box
+    // rather than sitting on the stroke.
+    final w = SizedBox(
       width: width,
       height: height,
-      padding: padding ?? const EdgeInsets.all(12),
       child: CustomPaint(
         painter: _SkBoxPainter(
           fill: fill,
@@ -47,7 +49,10 @@ class SkBox extends StatelessWidget {
           double_: double_,
           dashed: dashed,
         ),
-        child: child,
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(12),
+          child: child,
+        ),
       ),
     );
     if (onTap == null) return w;
@@ -353,65 +358,13 @@ class Paper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: C.paper,
-      body: SafeArea(top: false, child: child),
+      // Real top SafeArea: the OS status bar (time/signal/battery) shows through
+      // and content sits below it — no fake in-app status bar needed.
+      body: SafeArea(child: child),
     );
   }
 }
 
-class MiniStatus extends StatelessWidget {
-  const MiniStatus({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final now = TimeOfDay.now();
-    final h = now.hour.toString().padLeft(2, '0');
-    final m = now.minute.toString().padLeft(2, '0');
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-      child: Row(
-        children: [
-          Text(
-            '$h:$m',
-            style: const TextStyle(
-              color: C.ink,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
-          ),
-          const Spacer(),
-          // signal bars
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: List.generate(4, (i) {
-              return Container(
-                margin: const EdgeInsets.only(left: 2),
-                width: 3,
-                height: 4.0 + i * 2,
-                decoration: BoxDecoration(
-                  color: C.ink,
-                  borderRadius: BorderRadius.circular(1),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(width: 8),
-          // battery
-          Container(
-            width: 22,
-            height: 11,
-            decoration: BoxDecoration(
-              border: Border.all(color: C.ink, width: 1),
-              borderRadius: BorderRadius.circular(2),
-            ),
-            padding: const EdgeInsets.all(1),
-            child: Container(color: C.ink),
-          ),
-          Container(width: 2, height: 5, color: C.ink),
-        ],
-      ),
-    );
-  }
-}
 
 class Caption extends StatelessWidget {
   final String text;

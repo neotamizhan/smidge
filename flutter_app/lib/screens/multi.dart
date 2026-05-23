@@ -23,7 +23,6 @@ class ScrMulti extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 8),
             child: Row(

@@ -53,6 +53,8 @@ class Wobble {
     double strokeWidth = 1.2,
     bool dashed = false,
     double amplitude = 0.7,
+    double dashOn = 4,
+    double dashOff = 4,
   }) {
     final path = Path()..addRRect(rrect);
     final wobbled = apply(path, amplitude: amplitude);
@@ -66,7 +68,7 @@ class Wobble {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     if (dashed) {
-      _drawDashed(canvas, wobbled, p);
+      _drawDashed(canvas, wobbled, p, on: dashOn, off: dashOff);
     } else {
       canvas.drawPath(wobbled, p);
     }

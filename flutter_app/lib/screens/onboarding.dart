@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smidge/design/extensions.dart';
 import '../design/colors.dart';
 import '../design/sk_widgets.dart';
+import '../design/smidge_glyph.dart';
 import '../design/doodles.dart';
 
 class ScrSplash extends StatelessWidget {
@@ -12,33 +13,20 @@ class ScrSplash extends StatelessWidget {
     return Paper(
       child: Column(
         children: [
-          const MiniStatus(),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    const SmidgeMark(size: 52),
-                    Positioned(
-                      right: -28,
-                      top: -10,
-                      child: Transform.rotate(
-                        angle: 14 * 3.14159 / 180,
-                        child: const Doodle(DoodleKind.spoon, size: 34, color: C.terra),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                const SmidgeGlyph(size: 132),
+                const SizedBox(height: 22),
+                const SmidgeMark(size: 44),
+                const SizedBox(height: 10),
                 const SkUnderline(width: 120),
                 const SizedBox(height: 4),
                 Text(
                   'just a smidge.',
                   style: GoogleFonts.caveat(
-                                        fontSize: 24,
+                    fontSize: 24,
                     color: C.inkSoft,
                   ),
                 ),
@@ -70,26 +58,19 @@ class ScrWelcome extends StatelessWidget {
     return Paper(
       child: Stack(
         children: [
-          const MiniStatus(),
           Positioned(
             top: 60,
             right: 14,
             child: Opacity(opacity: 0.6, child: const Doodle(DoodleKind.beaker, size: 44)),
-          ),
-          Positioned(
-            top: 120,
-            left: 16,
-            child: Transform.rotate(
-              angle: -12 * 3.14159 / 180,
-              child: Opacity(opacity: 0.55, child: const Doodle(DoodleKind.ruler, size: 44)),
-            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 130),
+                const SizedBox(height: 24),
+                const SmidgeGlyph(size: 64),
+                const SizedBox(height: 30),
                 RichText(
                   text: TextSpan(
                     style: const TextStyle(
@@ -209,7 +190,6 @@ class ScrPickCats extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 30, 22, 0),
             child: Text('step one · the pantry',
@@ -364,7 +344,6 @@ class ScrPref extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 30, 22, 0),
             child: Text('step two · house style',
@@ -477,7 +456,6 @@ class ScrPinThree extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 30, 22, 0),
             child: Text('step three · the shortcut shelf',

@@ -54,7 +54,6 @@ class _ScrCookingState extends State<ScrCooking> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const MiniStatus(),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 0, 18, 8),
               child: Row(
@@ -132,7 +131,6 @@ class _ScrCookingState extends State<ScrCooking> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 6),
             child: Row(

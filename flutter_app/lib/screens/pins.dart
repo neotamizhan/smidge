@@ -32,7 +32,6 @@ class ScrPins extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 6),
             child: Row(

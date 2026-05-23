@@ -19,23 +19,6 @@ class ScrLibrary extends StatefulWidget {
 class _ScrLibraryState extends State<ScrLibrary> {
   String _search = '';
 
-  static const _cats = [
-    ['length', DoodleKind.ruler, C.sky, '17 units · m, km, mi, ft…'],
-    ['mass', DoodleKind.scale, C.mustard, '7 units · kg, lb, oz…'],
-    ['volume', DoodleKind.beaker, C.sage, '11 units · L, cup, gal…'],
-    ['temperature', DoodleKind.therm, C.terra, '4 scales · °C, °F, K, °R'],
-    ['area', DoodleKind.ruler, C.sky, '8 units · m², ft², ha…'],
-    ['speed', DoodleKind.arrow, C.sky, '5 units · km/h, mph…'],
-    ['time', DoodleKind.bolt, C.inkSoft, '8 units · s, min, hr, day…'],
-    ['data', DoodleKind.bolt, C.inkSoft, '6 units · B, KB, MB, GB…'],
-    ['pressure', DoodleKind.drop, C.sage, '7 units · Pa, psi, bar…'],
-    ['energy', DoodleKind.bolt, C.mustard, '7 units · J, cal, kWh…'],
-    ['cooking', DoodleKind.cup, C.mustard, '19 ingredients · density-aware'],
-    ['medical', DoodleKind.heart, C.terra, 'Glucose · clinical ranges'],
-    ['trades', DoodleKind.saw, C.sky, 'Compound ft-in-fraction'],
-    ['currency', DoodleKind.globe, C.sage, '14 currencies · static rates'],
-  ];
-
   String _displayName(String id) {
     final cat = kCategories[id];
     if (cat != null) return cat.name;
@@ -44,9 +27,24 @@ class _ScrLibraryState extends State<ScrLibrary> {
 
   @override
   Widget build(BuildContext context) {
+    final cats = [
+      ...kCategories.values.map((cat) {
+        final count = cat.units.length;
+        final unitWord = cat.id == 'temperature' ? 'scales' : 'units';
+        final symbols = cat.units.values.map((u) => u.sym).take(4).join(', ');
+        final suffix = cat.units.length > 4 ? '…' : '';
+        return [cat.id,cat.icon,cat.color,'$count $unitWord · $symbols$suffix',];
+      }),
+
+      const ['cooking',DoodleKind.cup,C.mustard,'19 ingredients · density-aware'],
+      const ['medical', DoodleKind.heart, C.terra, 'Glucose · clinical ranges'],
+      const ['trades', DoodleKind.saw, C.sky, 'Compound ft-in-fraction'],
+      const ['currency', DoodleKind.globe, C.sage,'14 currencies · static rates'],
+    ];
+
     final filtered = _search.isEmpty
-        ? _cats
-        : _cats.where((c) {
+        ? cats
+        : cats.where((c) {
             final id = c[0] as String;
             final name = _displayName(id);
             final desc = c[3] as String;
@@ -63,7 +61,6 @@ class _ScrLibraryState extends State<ScrLibrary> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 8),
             child: Row(
@@ -97,7 +94,7 @@ class _ScrLibraryState extends State<ScrLibrary> {
                       decoration: const InputDecoration(
                         isCollapsed: true,
                         border: InputBorder.none,
-                        hintText: 'Search 200+ units…',
+                        hintText: 'Search units & categories…',
                         hintStyle: TextStyle(fontSize: 13, color: C.inkFaint),
                       ),
                       style: const TextStyle(fontSize: 13, color: C.ink),
