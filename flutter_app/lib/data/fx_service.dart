@@ -8,6 +8,9 @@ const _kTimestampKey = 'fx_rates_ts';
 const _kMaxAgeMs = 4 * 60 * 60 * 1000; // 4 hours
 
 class FxService {
+  static const _required = ['EUR','GBP','INR','JPY','CAD','AUD',
+                           'CHF','CNY','MXN','BRL','SGD','AED','KRW'];
+
   static Future<Map<String, double>> getRates() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -17,7 +20,11 @@ class FxService {
 
     if (age < _kMaxAgeMs) {
       final cached = prefs.getString(_kRatesKey);
-      if (cached != null) return _parse(cached);
+      if (cached != null) {
+        final parsed = _safeParse(cached);
+        if (parsed != null) return parsed; // valid → use
+        // null = corrupted → fall through to fetch
+      }
     }
 
     // 2. Try fetch
@@ -31,27 +38,42 @@ class FxService {
         await prefs.setString(_kRatesKey, res.body);
         await prefs.setInt(
             _kTimestampKey, DateTime.now().millisecondsSinceEpoch);
-        return _parse(res.body);
+        final rates = _safeParse(res.body) ?? _bundled();
+        for (final sym in _required) {
+          rates.putIfAbsent(sym, () => kCurrencies[sym]?.rate ?? 1.0);
+        }
+        return rates;
       }
     } catch (_) {
       // network dead → fall through
     }
 
-    // 3. Last resort: stale cache or bundled snapshot
     final stale = prefs.getString(_kRatesKey);
-    if (stale != null) return _parse(stale);
+    if (stale != null) {
+      final parsed = _safeParse(stale);
+      if (parsed != null) {
+        for (final sym in _required) {
+          parsed.putIfAbsent(sym, () => kCurrencies[sym]?.rate ?? 1.0);
+        }
+        return parsed;
+      }
+    }
 
     return _bundled(); // kCurrencies fallback
   }
 
-  static Map<String, double> _parse(String json) {
+  static Map<String, double>? _safeParse(String json) {
+  try {
     final data = jsonDecode(json) as Map<String, dynamic>;
     final rates = Map<String, double>.from(
       (data['rates'] as Map).map((k, v) => MapEntry(k, (v as num).toDouble())),
     );
-    rates['USD'] = 1.0; // base
+    rates['USD'] = 1.0;
     return rates;
+  } catch (_) {
+    return null; // corrupted cache → null
   }
+}
 
   static Map<String, double> _bundled() {
     return {

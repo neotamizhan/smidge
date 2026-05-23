@@ -25,7 +25,7 @@ logs(String message, {bool showPrintInRelease = false}) {
   debugPrint(message);
 
   if (showPrintInRelease) {
-    // ignore: avoid_print
-    logs(message);
+    
+    print(message);
   }
 }
