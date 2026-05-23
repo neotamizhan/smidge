@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smidge/data/fx_service.dart';
 import '../design/colors.dart';
 import '../design/sk_widgets.dart';
 import '../design/doodles.dart';
@@ -17,6 +18,11 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   String _from = 'USD';
   String _to = 'INR';
   String _amount = '250';
+
+  Map<String, double> _rates = {};
+  DateTime? _lastUpdated;
+  bool _loading = false;
+  bool _isLive = false;
 
   void _onKey(String k) {
     setState(() {
@@ -36,11 +42,35 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _loadRates();
+  }
+
+  Future<void> _loadRates() async {
+    setState(() => _loading = true);
+    _rates = await FxService.getRates();
+    _lastUpdated = await FxService.lastUpdated();
+    _isLive = _lastUpdated != null;
+    setState(() => _loading = false);
+  }
+
+  double _rate(String sym) => _rates[sym] ?? kCurrencies[sym]?.rate ?? 1.0;
+
+  String _timeAgo(DateTime dt) {
+    final d = DateTime.now().difference(dt);
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    return '${d.inDays}d ago';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final val = double.tryParse(_amount) ?? 0;
-    final fromRate = kCurrencies[_from]!.rate;
-    final toRate = kCurrencies[_to]!.rate;
-    final result = (val / fromRate) * toRate;
+    final fromRate = _rate(_from);
+    final toRate = _rate(_to);
+    final result = val * (toRate / fromRate);
 
     final recents = kCurrencies.entries
         .where((e) => e.key != _from && e.key != _to)
@@ -59,10 +89,29 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                 BackBtn(onTap: () => Navigator.pop(context)),
                 const Text('Currency ',
                     style: TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 18, color: C.ink)),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: C.ink)),
                 const Doodle(DoodleKind.globe, size: 18, color: C.sage),
                 const Spacer(),
-                const Stamp(text: 'static · snapshot', color: C.terra, rotate: -8),
+                _loading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: C.terra),
+                      )
+                    : GestureDetector(
+                        onTap: () async {
+                          await FxService.clearCache();
+                          _loadRates();
+                        },
+                        child: Stamp(
+                          text: _isLive ? '↻ live' : 'static · snapshot',
+                          color: _isLive ? C.sage : C.terra,
+                          rotate: -8,
+                        ),
+                      ),
               ],
             ),
           ),
@@ -90,7 +139,8 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                           _from = _to;
                           _to = t;
                         }),
-                        child: const Doodle(DoodleKind.swap, size: 20, color: C.inkSoft),
+                        child: const Doodle(DoodleKind.swap,
+                            size: 20, color: C.inkSoft),
                       ),
                     ],
                   ),
@@ -119,9 +169,9 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      '1 $_from ≈ ${kCurrencies[_to]!.sym} ${fmt(toRate / fromRate, decimals: 4)} · static snapshot',
-                      style: GoogleFonts.caveat(
-                          fontSize: 14, color: C.inkSoft),
+                      '1 $_from ≈ ${kCurrencies[_to]!.sym} ${fmt(toRate / fromRate, decimals: 4)}'
+                      ' · ${_isLive && _lastUpdated != null ? 'live · ${_timeAgo(_lastUpdated!)}' : 'static snapshot'}',
+                      style: GoogleFonts.caveat(fontSize: 14, color: C.inkSoft),
                     ),
                   ),
                 ],
@@ -131,22 +181,23 @@ class _ScrCurrencyState extends State<ScrCurrency> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: Text('other currencies',
-                style: GoogleFonts.caveat(
-                    fontSize: 18, color: C.inkFaint)),
+                style: GoogleFonts.caveat(fontSize: 18, color: C.inkFaint)),
           ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: recents.map((e) {
-                final r = (val / fromRate) * e.value.rate;
+                final r = val * (_rate(e.key) / fromRate);
                 return GestureDetector(
                   onTap: () => setState(() => _to = e.key),
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                     decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(color: C.inkFaint.withValues(alpha: 0.33))),
+                          bottom: BorderSide(
+                              color: C.inkFaint.withValues(alpha: 0.33))),
                     ),
                     child: Row(
                       children: [
@@ -161,7 +212,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                                       fontSize: 14,
                                       color: C.ink)),
                               Text(
-                                  '1 $_from = ${fmt(e.value.rate / fromRate, decimals: 4)} ${e.key}',
+                                  '1 $_from = ${fmt(_rate(e.key) / fromRate, decimals: 4)} ${e.key}',
                                   style: TextStyle(
                                       fontSize: 11, color: C.inkFaint)),
                             ],
