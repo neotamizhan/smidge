@@ -19,6 +19,8 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   String _to = 'INR';
   String _amount = '250';
 
+  String _selecting = 'from'; // 'from' | 'to'
+
   Map<String, double> _rates = {};
   DateTime? _lastUpdated;
   bool _loading = false;
@@ -126,13 +128,24 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${kCurrencies[_from]!.flag} $_from',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                              color: C.ink)),
+                      GestureDetector(
+                        onTap: () => setState(() => _selecting = 'from'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _slotLabel(_from, _selecting == 'from'),
+                            Text('${kCurrencies[_from]!.sym} $_amount',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 42,
+                                    color: C.ink,
+                                    height: 1,
+                                    letterSpacing: -1.6)),
+                          ],
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () => setState(() {
                           final t = _from;
@@ -144,28 +157,25 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                       ),
                     ],
                   ),
-                  Text('${kCurrencies[_from]!.sym} $_amount',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 42,
-                          color: C.ink,
-                          height: 1,
-                          letterSpacing: -1.6)),
                   const SizedBox(height: 12),
                   const SkDivider(),
                   const SizedBox(height: 12),
-                  Text('${kCurrencies[_to]!.flag} $_to',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                          color: C.ink)),
-                  Text('${kCurrencies[_to]!.sym} ${fmt(result, decimals: 2)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 42,
-                          color: C.terra,
-                          height: 1,
-                          letterSpacing: -1.6)),
+                  GestureDetector(
+                      onTap: () => setState(() => _selecting = 'to'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _slotLabel(_to, _selecting == 'to'),
+                          Text(
+                              '${kCurrencies[_to]!.sym} ${fmt(result, decimals: 2)}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 42,
+                                  color: C.terra,
+                                  height: 1,
+                                  letterSpacing: -1.6)),
+                        ],
+                      )),
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
@@ -189,7 +199,13 @@ class _ScrCurrencyState extends State<ScrCurrency> {
               children: recents.map((e) {
                 final r = val * (_rate(e.key) / fromRate);
                 return GestureDetector(
-                  onTap: () => setState(() => _to = e.key),
+                  onTap: () => setState(() {
+                    if (_selecting == 'from') {
+                      _from = e.key;
+                    } else {
+                      _to = e.key;
+                    }
+                  }),
                   behavior: HitTestBehavior.opaque,
                   child: Container(
                     padding:
@@ -233,6 +249,30 @@ class _ScrCurrencyState extends State<ScrCurrency> {
           Keypad(onKey: _onKey),
         ],
       ),
+    );
+  }
+
+  Widget _slotLabel(String code, bool isActive) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          child: Text(
+            '${kCurrencies[code]!.flag} $code',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color:
+                  isActive ? C.terra : C.ink, // active = terra, inactive = ink
+            ),
+          ),
+        ),
+        if (isActive) ...[
+          // chevron only on active slot
+          const SizedBox(width: 4),
+          const Icon(Icons.circle, size: 12, color: C.terra),
+        ],
+      ],
     );
   }
 }
