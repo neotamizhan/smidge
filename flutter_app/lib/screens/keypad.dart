@@ -88,7 +88,7 @@ class Keypad extends StatelessWidget {
                   child: Text(
                     '⌫',
                     style: TextStyle(
-                      fontSize: w * 0.055,
+                      fontSize: (w * 0.055).clamp(18.0, 26.0),
                       fontWeight: FontWeight.w600,
                       color: C.ink,
                     ),
