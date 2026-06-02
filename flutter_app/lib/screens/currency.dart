@@ -4,7 +4,6 @@ import '../design/colors.dart';
 import '../design/sk_widgets.dart';
 import '../design/doodles.dart';
 import '../data/convert.dart';
-import '../data/fx_service.dart';
 import '../data/format.dart';
 import 'keypad.dart';
 
@@ -18,13 +17,6 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   String _from = 'USD';
   String _to = 'INR';
   String _amount = '250';
-
-  String _selecting = 'from'; // 'from' | 'to'
-
-  Map<String, double> _rates = {};
-  DateTime? _lastUpdated;
-  bool _loading = false;
-  bool _isLive = false;
 
   void _onKey(String k) {
     setState(() {
@@ -44,36 +36,11 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _loadRates();
-  }
-
-  Future<void> _loadRates() async {
-    if (!mounted) return;
-    setState(() => _loading = true);
-    _rates = await FxService.getRates();
-    _lastUpdated = await FxService.lastUpdated();
-    _isLive = _lastUpdated != null;
-    if (!mounted) return;
-    setState(() => _loading = false);
-  }
-
-  double _rate(String sym) => _rates[sym] ?? kCurrencies[sym]?.rate ?? 1.0;
-
-  String _timeAgo(DateTime dt) {
-    final d = DateTime.now().difference(dt);
-    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
-    if (d.inHours < 24) return '${d.inHours}h ago';
-    return '${d.inDays}d ago';
-  }
-
-  @override
   Widget build(BuildContext context) {
     final val = double.tryParse(_amount) ?? 0;
-    final fromRate = _rate(_from);
-    final toRate = _rate(_to);
-    final result = val * (toRate / fromRate);
+    final fromRate = kCurrencies[_from]!.rate;
+    final toRate = kCurrencies[_to]!.rate;
+    final result = (val / fromRate) * toRate;
 
     final recents = kCurrencies.entries
         .where((e) => e.key != _from && e.key != _to)
@@ -84,6 +51,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const MiniStatus(),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 18, 4),
             child: Row(
@@ -91,29 +59,10 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                 BackBtn(onTap: () => Navigator.pop(context)),
                 const Text('Currency ',
                     style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                        color: C.ink)),
+                        fontWeight: FontWeight.w700, fontSize: 18, color: C.ink)),
                 const Doodle(DoodleKind.globe, size: 18, color: C.sage),
                 const Spacer(),
-                _loading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: C.terra),
-                      )
-                    : GestureDetector(
-                        onTap: () async {
-                          await FxService.clearCache();
-                          _loadRates();
-                        },
-                        child: Stamp(
-                          text: _isLive ? '↻ live' : 'static · snapshot',
-                          color: _isLive ? C.sage : C.terra,
-                          rotate: -8,
-                        ),
-                      ),
+                const Stamp(text: 'static · snapshot', color: C.terra, rotate: -8),
               ],
             ),
           ),
@@ -128,60 +77,51 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      GestureDetector(
-                        onTap: () => setState(() => _selecting = 'from'),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _slotLabel(_from, _selecting == 'from'),
-                            Text('${kCurrencies[_from]!.sym} $_amount',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 42,
-                                    color: C.ink,
-                                    height: 1,
-                                    letterSpacing: -1.6)),
-                          ],
-                        ),
-                      ),
+                      Text('${kCurrencies[_from]!.flag} $_from',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              color: C.ink)),
                       GestureDetector(
                         onTap: () => setState(() {
                           final t = _from;
                           _from = _to;
                           _to = t;
                         }),
-                        child: const Doodle(DoodleKind.swap,
-                            size: 20, color: C.inkSoft),
+                        child: const Doodle(DoodleKind.swap, size: 20, color: C.inkSoft),
                       ),
                     ],
                   ),
+                  Text('${kCurrencies[_from]!.sym} $_amount',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 42,
+                          color: C.ink,
+                          height: 1,
+                          letterSpacing: -1.6)),
                   const SizedBox(height: 12),
                   const SkDivider(),
                   const SizedBox(height: 12),
-                  GestureDetector(
-                      onTap: () => setState(() => _selecting = 'to'),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _slotLabel(_to, _selecting == 'to'),
-                          Text(
-                              '${kCurrencies[_to]!.sym} ${fmt(result, decimals: 2)}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 42,
-                                  color: C.terra,
-                                  height: 1,
-                                  letterSpacing: -1.6)),
-                        ],
-                      )),
+                  Text('${kCurrencies[_to]!.flag} $_to',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: C.ink)),
+                  Text('${kCurrencies[_to]!.sym} ${fmt(result, decimals: 2)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 42,
+                          color: C.terra,
+                          height: 1,
+                          letterSpacing: -1.6)),
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      '1 $_from ≈ ${kCurrencies[_to]!.sym} ${fmt(toRate / fromRate, decimals: 4)}'
-                      ' · ${_isLive && _lastUpdated != null ? 'live · ${_timeAgo(_lastUpdated!)}' : 'static snapshot'}',
-                      style: GoogleFonts.caveat(fontSize: 14, color: C.inkSoft),
+                      '1 $_from ≈ ${kCurrencies[_to]!.sym} ${fmt(toRate / fromRate, decimals: 4)} · static snapshot',
+                      style: GoogleFonts.caveat(
+                          fontSize: 14, color: C.inkSoft),
                     ),
                   ),
                 ],
@@ -191,29 +131,22 @@ class _ScrCurrencyState extends State<ScrCurrency> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: Text('other currencies',
-                style: GoogleFonts.caveat(fontSize: 18, color: C.inkFaint)),
+                style: GoogleFonts.caveat(
+                    fontSize: 18, color: C.inkFaint)),
           ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: recents.map((e) {
-                final r = val * (_rate(e.key) / fromRate);
+                final r = (val / fromRate) * e.value.rate;
                 return GestureDetector(
-                  onTap: () => setState(() {
-                    if (_selecting == 'from') {
-                      _from = e.key;
-                    } else {
-                      _to = e.key;
-                    }
-                  }),
+                  onTap: () => setState(() => _to = e.key),
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                     decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(
-                              color: C.inkFaint.withValues(alpha: 0.33))),
+                          bottom: BorderSide(color: C.inkFaint.withValues(alpha: 0.33))),
                     ),
                     child: Row(
                       children: [
@@ -228,7 +161,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                                       fontSize: 14,
                                       color: C.ink)),
                               Text(
-                                  '1 $_from = ${fmt(_rate(e.key) / fromRate, decimals: 4)} ${e.key}',
+                                  '1 $_from = ${fmt(e.value.rate / fromRate, decimals: 4)} ${e.key}',
                                   style: TextStyle(
                                       fontSize: 11, color: C.inkFaint)),
                             ],
@@ -249,30 +182,6 @@ class _ScrCurrencyState extends State<ScrCurrency> {
           Keypad(onKey: _onKey),
         ],
       ),
-    );
-  }
-
-  Widget _slotLabel(String code, bool isActive) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          child: Text(
-            '${kCurrencies[code]!.flag} $code',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              color:
-                  isActive ? C.terra : C.ink, // active = terra, inactive = ink
-            ),
-          ),
-        ),
-        if (isActive) ...[
-          // chevron only on active slot
-          const SizedBox(width: 4),
-          const Icon(Icons.circle, size: 12, color: C.terra),
-        ],
-      ],
     );
   }
 }
