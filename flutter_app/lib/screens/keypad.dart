@@ -21,7 +21,8 @@ class Keypad extends StatelessWidget {
             ['1', '2', '3'],
             ['.', '0', '⌫'],
           ];
-    return Padding(
+
+    final keypad = Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
       child: Column(
         children: rows.map((row) {
@@ -61,6 +62,45 @@ class Keypad extends StatelessWidget {
         }).toList(),
       ),
     );
+
+    if (!exprMode) return keypad;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(right: w * 0.045),
+              child: GestureDetector(
+                onTap: () => onKey('⌫'),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: w * 0.070,
+                    vertical: w * 0.015,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x73FFFFFF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: C.inkSoft, width: 1.2),
+                  ),
+                  child: Text(
+                    '⌫',
+                    style: TextStyle(
+                      fontSize: w * 0.055,
+                      fontWeight: FontWeight.w600,
+                      color: C.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            keypad,
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -72,8 +112,7 @@ class _KeyPainter extends CustomPainter {
     final r = Rect.fromLTWH(2, 2, size.width - 4, size.height - 4);
     final rrect = RRect.fromRectAndRadius(r, const Radius.circular(6));
     // We can't use Wobble here as easily because we want the fill
-    final paint = Paint()
-      ..color = accent ? C.terra : const Color(0x73FFFFFF);
+    final paint = Paint()..color = accent ? C.terra : const Color(0x73FFFFFF);
     canvas.drawRRect(rrect, paint);
     canvas.drawRRect(
       rrect,
