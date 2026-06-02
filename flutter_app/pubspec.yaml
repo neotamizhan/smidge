@@ -12,29 +12,11 @@ dependencies:
     sdk: flutter
   shared_preferences: ^2.2.2
   google_fonts: ^6.2.1
-  http: ^1.6.0
 
 dev_dependencies:
   flutter_lints: ^3.0.1
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
-
-# App launcher icon — the Smidge ruler-glyph mark.
-# Regenerate with: dart run flutter_launcher_icons
-flutter_launcher_icons:
-  image_path: "assets/icon/smidge_icon.png"
-  android: true
-  ios: true
-  remove_alpha_ios: true
-  min_sdk_android: 21
-  adaptive_icon_background: "#F3E9D3"
-  adaptive_icon_foreground: "assets/icon/smidge_icon_fg.png"
-  web:
-    generate: true
-    image_path: "assets/icon/smidge_icon.png"
-    background_color: "#F3E9D3"
-    theme_color: "#C4593A"
