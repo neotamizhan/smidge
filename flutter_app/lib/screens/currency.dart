@@ -50,16 +50,18 @@ class _ScrCurrencyState extends State<ScrCurrency> {
   }
 
   Future<void> _loadRates() async {
+    final rates = await FxService.getRates();
+    final lu = await FxService.lastUpdated();
     if (!mounted) return;
-    setState(() => _loading = true);
-    _rates = await FxService.getRates();
-    _lastUpdated = await FxService.lastUpdated();
-    _isLive = _lastUpdated != null;
-    if (!mounted) return;
-    setState(() => _loading = false);
+    setState(() {
+      _rates = rates;
+      _lastUpdated = lu;
+      _isLive = lu != null;
+      _loading = false;
+    });
   }
 
-  double _rate(String sym) => _rates[sym] ?? kCurrencies[sym]?.rate ?? 1.0;
+  double _rate(String sym) => _rates[sym] ?? kCurrencies[sym]?.rate ?? double.nan;
 
   String _timeAgo(DateTime dt) {
     final d = DateTime.now().difference(dt);
@@ -73,7 +75,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
     final val = double.tryParse(_amount) ?? 0;
     final fromRate = _rate(_from);
     final toRate = _rate(_to);
-    final result = val * (toRate / fromRate);
+    final result = (toRate.isNaN || fromRate.isNaN) ? double.nan : val * (toRate / fromRate);
 
     final recents = kCurrencies.entries
         .where((e) => e.key != _from && e.key != _to)
@@ -167,7 +169,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
                         children: [
                           _slotLabel(_to, _selecting == 'to'),
                           Text(
-                              '${kCurrencies[_to]!.sym} ${fmt(result, decimals: 2)}',
+                              '${kCurrencies[_to]!.sym} ${result.isNaN ? '—' : fmt(result, decimals: 2)}',
                               style: const TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 42,
@@ -270,7 +272,7 @@ class _ScrCurrencyState extends State<ScrCurrency> {
         if (isActive) ...[
           // chevron only on active slot
           const SizedBox(width: 4),
-          const Icon(Icons.circle, size: 12, color: C.terra),
+          const Icon(Icons.expand_more, size: 12, color: C.terra),
         ],
       ],
     );
