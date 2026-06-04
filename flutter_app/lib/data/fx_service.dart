@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'convert.dart';
@@ -57,8 +58,9 @@ class FxService {
         }
         return rates;
       }
-    } catch (_) {
+    } catch (e) {
       // network dead → fall through
+      debugPrint('FxService.getRates: network error → $e');
     }
 
     final stale = prefs.getString(_kRatesKey);
@@ -84,8 +86,9 @@ class FxService {
       );
       rates['USD'] = 1.0;
       return rates;
-    } catch (_) {
-      return null; // corrupted cache → null
+    } catch (e) {
+      debugPrint('FxService._safeParse: corrupted cache → $e');
+      return null;
     }
   }
 
