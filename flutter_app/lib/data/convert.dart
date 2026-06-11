@@ -95,30 +95,184 @@ double convertGlucose(double val, String from, String to) {
   return double.nan;
 }
 
-class GlucoseRange {
-  final String label;
+// ── Medical — analytes (glucose, HbA1c, lipids, creatinine) ──
+class AnalyteSeg {
+  final int flex; // width weight in the range strip
+  final double lo;
+  final double hi; // last segment's hi is the visual max for the marker
+  final String label; // short label under the strip
+  final String rangeText; // bounds caption under the strip
+  final String verdict; // sentence-case verdict for the context box
   final int colorValue; // ARGB
-  final double pct;
-  GlucoseRange(this.label, this.colorValue, this.pct);
+  const AnalyteSeg(this.flex, this.lo, this.hi, this.label, this.rangeText,
+      this.verdict, this.colorValue);
 }
 
-GlucoseRange glucoseRange(double mgdL) {
-  if (mgdL < 70) {
-    return GlucoseRange('Low', 0xFF7C95A8,
-        (mgdL.clamp(0, 70) / 70 * 20).toDouble());
-  }
-  if (mgdL < 100) {
-    return GlucoseRange('Normal', 0xFF7B8A6F, 20 + (mgdL - 70) / 30 * 35);
-  }
-  if (mgdL < 126) {
-    return GlucoseRange('Pre-diab.', 0xFFC89A3A, 55 + (mgdL - 100) / 26 * 20);
-  }
-  return GlucoseRange(
-    'Diabetic',
-    0xFFC4593A,
-    (75 + (mgdL - 126) / 74 * 25).clamp(0, 100).toDouble(),
-  );
+class AnalyteReading {
+  final AnalyteSeg seg;
+  final double pct; // marker position across the strip, 0–100
+  const AnalyteReading(this.seg, this.pct);
+  String get verdict => seg.verdict;
+  int get colorValue => seg.colorValue;
 }
+
+class Analyte {
+  final String id;
+  final String tabLabel;
+  final String title; // e.g. 'blood glucose'
+  final String unitA; // canonical input unit, e.g. 'mg/dL'
+  final String unitB;
+  final double factor; // B = (A − offset) × factor
+  final double offset; // non-zero only for HbA1c (NGSP→IFCC)
+  final int decimalsA; // display decimals when converting into unit A
+  final int decimalsB;
+  final String defaultValue; // initial input, in unit A
+  final String rangeTitle;
+  final String note;
+  final List<AnalyteSeg> segs; // contiguous, in unit A
+  const Analyte({
+    required this.id,
+    required this.tabLabel,
+    required this.title,
+    required this.unitA,
+    required this.unitB,
+    required this.factor,
+    this.offset = 0,
+    required this.decimalsA,
+    required this.decimalsB,
+    required this.defaultValue,
+    required this.rangeTitle,
+    required this.note,
+    required this.segs,
+  });
+
+  double aToB(double a) => a.isFinite ? (a - offset) * factor : double.nan;
+  double bToA(double b) => b.isFinite ? b / factor + offset : double.nan;
+
+  AnalyteReading range(double valInA) {
+    var below = 0.0;
+    final total = segs.fold<int>(0, (s, e) => s + e.flex);
+    for (final seg in segs) {
+      final isLast = identical(seg, segs.last);
+      if (valInA < seg.hi || isLast) {
+        final span = seg.hi - seg.lo;
+        final within =
+            span > 0 ? ((valInA - seg.lo) / span).clamp(0.0, 1.0) : 0.0;
+        final pct = (below + within * seg.flex) / total * 100;
+        return AnalyteReading(seg, pct.clamp(0.0, 100.0));
+      }
+      below += seg.flex;
+    }
+    return AnalyteReading(segs.last, 100);
+  }
+}
+
+const int _cSky = 0xFF7C95A8;
+const int _cSage = 0xFF7B8A6F;
+const int _cMustard = 0xFFC89A3A;
+const int _cTerra = 0xFFC4593A;
+const int _cTerraDeep = 0xFFA34428;
+
+const List<Analyte> kAnalytes = [
+  Analyte(
+    id: 'glucose',
+    tabLabel: 'Glucose',
+    title: 'blood glucose',
+    unitA: 'mg/dL',
+    unitB: 'mmol/L',
+    factor: 1 / kGlucoseFactor,
+    decimalsA: 0,
+    decimalsB: 2,
+    defaultValue: '94',
+    rangeTitle: 'where this sits · fasting (ADA)',
+    note: 'ADA reference · educational only — discuss with your clinician.',
+    segs: [
+      AnalyteSeg(20, 0, 70, 'low', '< 70', 'Low', _cSky),
+      AnalyteSeg(35, 70, 100, 'normal', '70–99', 'Normal', _cSage),
+      AnalyteSeg(20, 100, 126, 'pre-diab', '100–125', 'Pre-diab.', _cMustard),
+      AnalyteSeg(25, 126, 200, 'diabetic', '≥ 126', 'Diabetic', _cTerra),
+    ],
+  ),
+  Analyte(
+    id: 'hba1c',
+    tabLabel: 'HbA1c',
+    title: 'haemoglobin A1c',
+    unitA: '%',
+    unitB: 'mmol/mol',
+    factor: 10.929, // IFCC = 10.929 × (NGSP% − 2.15)
+    offset: 2.15,
+    decimalsA: 1,
+    decimalsB: 0,
+    defaultValue: '5.6',
+    rangeTitle: 'where this sits · HbA1c (ADA)',
+    note: 'ADA reference · educational only — discuss with your clinician.',
+    segs: [
+      AnalyteSeg(15, 0, 4.0, 'low', '< 4.0', 'Low', _cSky),
+      AnalyteSeg(35, 4.0, 5.7, 'normal', '4.0–5.6', 'Normal', _cSage),
+      AnalyteSeg(25, 5.7, 6.5, 'pre-diab', '5.7–6.4', 'Pre-diabetic', _cMustard),
+      AnalyteSeg(25, 6.5, 14, 'diabetic', '≥ 6.5', 'Diabetic', _cTerra),
+    ],
+  ),
+  Analyte(
+    id: 'cholesterol',
+    tabLabel: 'Cholest.',
+    title: 'total cholesterol',
+    unitA: 'mg/dL',
+    unitB: 'mmol/L',
+    factor: 1 / 38.67,
+    decimalsA: 0,
+    decimalsB: 2,
+    defaultValue: '180',
+    rangeTitle: 'where this sits · total cholesterol',
+    note:
+        'NCEP ATP III reference · educational only — discuss with your clinician.',
+    segs: [
+      AnalyteSeg(40, 0, 200, 'desirable', '< 200', 'Desirable', _cSage),
+      AnalyteSeg(
+          30, 200, 240, 'borderline', '200–239', 'Borderline high', _cMustard),
+      AnalyteSeg(30, 240, 320, 'high', '≥ 240', 'High', _cTerra),
+    ],
+  ),
+  Analyte(
+    id: 'creatinine',
+    tabLabel: 'Creat.',
+    title: 'serum creatinine',
+    unitA: 'mg/dL',
+    unitB: 'µmol/L',
+    factor: 88.42,
+    decimalsA: 2,
+    decimalsB: 0,
+    defaultValue: '1.0',
+    rangeTitle: 'where this sits · adult reference',
+    note:
+        'Typical adult range — varies by sex & muscle mass · educational only — discuss with your clinician.',
+    segs: [
+      AnalyteSeg(25, 0, 0.6, 'low', '< 0.6', 'Below typical', _cSky),
+      AnalyteSeg(45, 0.6, 1.3, 'typical', '0.6–1.3', 'Typical', _cSage),
+      AnalyteSeg(30, 1.3, 2.6, 'high', '> 1.3', 'Above typical', _cTerra),
+    ],
+  ),
+  Analyte(
+    id: 'triglycerides',
+    tabLabel: 'Trig.',
+    title: 'triglycerides',
+    unitA: 'mg/dL',
+    unitB: 'mmol/L',
+    factor: 1 / 88.57,
+    decimalsA: 0,
+    decimalsB: 2,
+    defaultValue: '120',
+    rangeTitle: 'where this sits · fasting',
+    note: 'NCEP reference · educational only — discuss with your clinician.',
+    segs: [
+      AnalyteSeg(30, 0, 150, 'normal', '< 150', 'Normal', _cSage),
+      AnalyteSeg(
+          20, 150, 200, 'borderline', '150–199', 'Borderline high', _cMustard),
+      AnalyteSeg(30, 200, 500, 'high', '200–499', 'High', _cTerra),
+      AnalyteSeg(20, 500, 1000, 'very high', '≥ 500', 'Very high', _cTerraDeep),
+    ],
+  ),
+];
 
 // ── Trades — ft/in/fraction ──
 class FtInFrac {

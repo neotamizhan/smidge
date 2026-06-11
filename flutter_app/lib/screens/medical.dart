@@ -14,8 +14,9 @@ class ScrMedical extends StatefulWidget {
 }
 
 class _ScrMedicalState extends State<ScrMedical> {
-  String _value = '94';
-  String _inputUnit = 'mgdL';
+  int _tab = 0;
+  String _value = kAnalytes.first.defaultValue;
+  bool _inputIsA = true; // true = canonical unit (e.g. mg/dL)
 
   void _onKey(String k) {
     setState(() {
@@ -33,25 +34,29 @@ class _ScrMedicalState extends State<ScrMedical> {
     });
   }
 
+  void _selectTab(int i) {
+    if (i == _tab) return;
+    setState(() {
+      _tab = i;
+      _value = kAnalytes[i].defaultValue;
+      _inputIsA = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final analyte = kAnalytes[_tab];
     final numVal = double.tryParse(_value) ?? 0;
-    final actualMgdL =
-        _inputUnit == 'mgdL' ? numVal : numVal * kGlucoseFactor;
-    final converted = _inputUnit == 'mgdL'
-        ? fmt(convertGlucose(numVal, 'mgdL', 'mmolL'), decimals: 2)
-        : fmt(convertGlucose(numVal, 'mmolL', 'mgdL'), decimals: 0);
-    final range = glucoseRange(actualMgdL);
-    final fromSym = _inputUnit == 'mgdL' ? 'mg/dL' : 'mmol/L';
-    final toSym = _inputUnit == 'mgdL' ? 'mmol/L' : 'mg/dL';
+    final valInA = _inputIsA ? numVal : analyte.bToA(numVal);
+    final converted = _inputIsA
+        ? fmt(analyte.aToB(numVal), decimals: analyte.decimalsB)
+        : fmt(analyte.bToA(numVal), decimals: analyte.decimalsA);
+    final reading = analyte.range(valInA);
+    final fromSym = _inputIsA ? analyte.unitA : analyte.unitB;
+    final toSym = _inputIsA ? analyte.unitB : analyte.unitA;
 
-    final segs = [
-      [20, C.sky, '< 70', 'low'],
-      [35, C.sage, '70–99', 'normal'],
-      [20, C.mustard, '100–125', 'pre-diab'],
-      [25, C.terra, '≥ 126', 'diabetic'],
-    ];
-    final markerPct = range.pct.clamp(2, 98).toDouble();
+    final segs = analyte.segs;
+    final markerPct = reading.pct.clamp(2, 98).toDouble();
 
     return Paper(
       child: Column(
@@ -76,17 +81,19 @@ class _ScrMedicalState extends State<ScrMedical> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
-              children: ['Glucose', 'HbA1c', 'Cholest.', 'Creat.', 'Trig.']
+              children: kAnalytes
                   .asMap()
                   .entries
                   .map((e) => Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: SkChip(
                           height: 28,
-                          fill: e.key == 0 ? C.terra : Colors.transparent,
-                          stroke: e.key == 0 ? C.terra : C.inkFaint,
-                          textColor: e.key == 0 ? C.paper : C.inkSoft,
-                          child: Text(e.value, style: const TextStyle(fontSize: 11)),
+                          fill: e.key == _tab ? C.terra : Colors.transparent,
+                          stroke: e.key == _tab ? C.terra : C.inkFaint,
+                          textColor: e.key == _tab ? C.paper : C.inkSoft,
+                          onTap: () => _selectTab(e.key),
+                          child: Text(e.value.tabLabel,
+                              style: const TextStyle(fontSize: 11)),
                         ),
                       ))
                   .toList(),
@@ -105,12 +112,15 @@ class _ScrMedicalState extends State<ScrMedical> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('blood glucose',
-                          style: GoogleFonts.caveat(
-                              fontSize: 17, color: C.inkFaint)),
+                      Flexible(
+                        child: Text(analyte.title,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.caveat(
+                                fontSize: 17, color: C.inkFaint)),
+                      ),
                       GestureDetector(
                         onTap: () => setState(() {
-                          _inputUnit = _inputUnit == 'mgdL' ? 'mmolL' : 'mgdL';
+                          _inputIsA = !_inputIsA;
                         }),
                         child: Text('$fromSym ↕',
                             style: const TextStyle(
@@ -165,7 +175,7 @@ class _ScrMedicalState extends State<ScrMedical> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('where this sits · fasting (ADA)',
+                Text(analyte.rangeTitle,
                     style: GoogleFonts.caveat(
                         fontSize: 16, color: C.inkFaint)),
                 const SizedBox(height: 8),
@@ -179,10 +189,10 @@ class _ScrMedicalState extends State<ScrMedical> {
                           child: Row(
                             children: segs
                                 .map((s) => Expanded(
-                                      flex: s[0] as int,
+                                      flex: s.flex,
                                       child: Container(
                                           height: 18,
-                                          color: (s[1] as Color)
+                                          color: Color(s.colorValue)
                                               .withValues(alpha: 0.85)),
                                     ))
                                 .toList(),
@@ -212,15 +222,15 @@ class _ScrMedicalState extends State<ScrMedical> {
                           child: Row(
                             children: segs.map((s) {
                               return Expanded(
-                                flex: s[0] as int,
+                                flex: s.flex,
                                 child: Column(
                                   children: [
-                                    Text(s[3] as String,
+                                    Text(s.label,
                                         style: TextStyle(
-                                            color: s[1] as Color,
+                                            color: Color(s.colorValue),
                                             fontWeight: FontWeight.w700,
                                             fontSize: 9.5)),
-                                    Text(s[2] as String,
+                                    Text(s.rangeText,
                                         style: const TextStyle(
                                             fontSize: 9.5, color: C.inkSoft)),
                                   ],
@@ -241,21 +251,21 @@ class _ScrMedicalState extends State<ScrMedical> {
             child: SkBox(
               padding: const EdgeInsets.all(10),
               radius: 12,
-              fill: Color(range.colorValue).withValues(alpha: 0.1),
-              stroke: Color(range.colorValue),
+              fill: Color(reading.colorValue).withValues(alpha: 0.1),
+              stroke: Color(reading.colorValue),
               dashed: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${range.label}.',
+                  Text('${reading.verdict}.',
                       style: GoogleFonts.caveat(
                                                     fontSize: 17,
                           color: C.ink,
                           height: 1.1)),
                   const SizedBox(height: 3),
                   Text(
-                    'ADA reference · educational only — discuss with your clinician.',
-                    style: TextStyle(fontSize: 11, color: C.inkSoft),
+                    analyte.note,
+                    style: const TextStyle(fontSize: 11, color: C.inkSoft),
                   ),
                 ],
               ),
