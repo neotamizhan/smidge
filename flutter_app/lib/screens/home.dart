@@ -17,6 +17,7 @@ import 'cooking.dart';
 import 'medical.dart';
 import 'trades.dart';
 import 'currency.dart';
+import 'settings.dart';
 
 class ScrHome extends StatelessWidget {
   final AppState state;
@@ -25,6 +26,11 @@ class ScrHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cat = kCategories[state.category] ?? kCategories['length']!;
+    final visibleCategories = state.preferredCategories.isEmpty
+        ? kCategories.entries.toList()
+        : kCategories.entries.where((e) {
+            return state.preferredCategories.contains(e.key);
+          }).toList();
     final units = cat.units;
     final fromU = units[state.fromUnit];
     final toU = units[state.toUnit];
@@ -81,6 +87,15 @@ class ScrHome extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ScrSettings(state: state))),
+                  behavior: HitTestBehavior.opaque,
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.settings_outlined, size: 20, color: C.inkSoft),
+                  ),
+                ),
               ],
             ),
           ),
@@ -91,7 +106,7 @@ class ScrHome extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: kCategories.entries.map((e) {
+              children: visibleCategories.map((e) {
                 final id = e.key;
                 final c = e.value;
                 final active = id == state.category;

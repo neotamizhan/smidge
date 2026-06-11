@@ -117,6 +117,7 @@ class _RootState extends State<_Root> {
             onDone: () async {
               _state.setSystem(_obSystem);
               _state.setPins(_obPins.toList());
+              _state.setPreferredCategories(_obCats.toList());
               await AppState.setOnboarded();
               if (!mounted) return;
               setState(() => _onboarded = true);

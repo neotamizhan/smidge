@@ -16,6 +16,12 @@ class AppState extends ChangeNotifier {
   bool exprMode = false;
   InputSide inputSide = InputSide.from;
   List<String> pins = ['temp', 'flour', 'glucose'];
+  List<String> preferredCategories = [
+    'length',
+    'mass',
+    'temperature',
+    'cooking',
+  ];
   String system = 'metric';
   int decimals = 4;
 
@@ -35,6 +41,9 @@ class AppState extends ChangeNotifier {
         exprMode = j['exprMode'] ?? exprMode;
         inputSide = (j['inputSide'] == 'to') ? InputSide.to : InputSide.from;
         pins = (j['pins'] as List?)?.cast<String>() ?? pins;
+        preferredCategories =
+            (j['preferredCategories'] as List?)?.cast<String>() ??
+                preferredCategories;
         system = j['system'] ?? system;
         decimals = j['decimals'] ?? decimals;
       } catch (_) {}
@@ -53,6 +62,7 @@ class AppState extends ChangeNotifier {
       'exprMode': exprMode,
       'inputSide': inputSide == InputSide.to ? 'to' : 'from',
       'pins': pins,
+      'preferredCategories': preferredCategories,
       'system': system,
       'decimals': decimals,
     });
@@ -169,6 +179,24 @@ class AppState extends ChangeNotifier {
 
   void setPins(List<String> list) {
     pins = list;
+    notifyListeners();
+    persist();
+  }
+
+  void setPreferredCategories(List<String> list) {
+    preferredCategories = list;
+
+    // Safety fallback
+    if (preferredCategories.isEmpty) {
+      preferredCategories = ['length'];
+    }
+
+    // Ensure current category still exists
+    if (!preferredCategories.contains(category)) {
+      setCategory(preferredCategories.first);
+      return;
+    }
+
     notifyListeners();
     persist();
   }
