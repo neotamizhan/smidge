@@ -173,6 +173,19 @@ class AppState extends ChangeNotifier {
     persist();
   }
 
+  /// Same rule as onboarding: unpin if pinned; otherwise append,
+  /// replacing the oldest pin when three are already chosen.
+  void togglePin(String id) {
+    final next = [...pins];
+    if (next.contains(id)) {
+      next.remove(id);
+    } else {
+      if (next.length >= 3) next.removeAt(0);
+      next.add(id);
+    }
+    setPins(next);
+  }
+
   // Convenience: get currently shown values for from/to
   String get fromDisplay {
     final parsed = evalExpr(expression) ?? double.tryParse(expression);

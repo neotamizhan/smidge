@@ -7,6 +7,7 @@ import '../design/doodles.dart';
 import '../data/units.dart';
 import '../data/convert.dart';
 import '../data/format.dart';
+import '../data/pin_defs.dart';
 import '../state/app_state.dart';
 import 'keypad.dart';
 import 'multi.dart';
@@ -412,14 +413,6 @@ class _PinnedShelf extends StatelessWidget {
   final AppState state;
   const _PinnedShelf({required this.state});
 
-  static const _defs = {
-    'temp':    {'a': '°F', 'b': '°C', 'cat': 'temperature', 'from': 'F', 'to': 'C', 'doodle': DoodleKind.therm, 'color': C.terra},
-    'flour':   {'a': 'cup', 'b': 'g',  'cat': 'cooking', 'doodle': DoodleKind.cup, 'color': C.mustard},
-    'glucose': {'a': 'mg/dL', 'b': 'mmol/L', 'cat': 'medical', 'doodle': DoodleKind.drop, 'color': C.sage},
-    'dist':    {'a': 'mi', 'b': 'km', 'cat': 'length', 'from': 'mi', 'to': 'km', 'doodle': DoodleKind.ruler, 'color': C.sky},
-    'weight':  {'a': 'lb', 'b': 'kg', 'cat': 'mass', 'from': 'lb', 'to': 'kg', 'doodle': DoodleKind.scale, 'color': C.inkSoft},
-  };
-
   @override
   Widget build(BuildContext context) {
     final show = state.pins.take(3).toList();
@@ -427,9 +420,9 @@ class _PinnedShelf extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: show.map((id) {
-          final d = _defs[id];
+          final d = kPinDefById[id];
           if (d == null) return const Expanded(child: SizedBox());
-          final active = d['cat'] == state.category;
+          final active = d.cat == state.category;
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
@@ -439,29 +432,28 @@ class _PinnedShelf extends StatelessWidget {
                 stroke: active ? C.ink : C.inkFaint,
                 fill: active ? C.paper : const Color(0x05000000),
                 onTap: () {
-                  final cat = d['cat'] as String;
-                  if (['cooking','medical','trades','currency'].contains(cat)) {
-                    _openVertical(context, cat);
+                  if (['cooking','medical','trades','currency'].contains(d.cat)) {
+                    _openVertical(context, d.cat);
                   } else {
-                    state.setCategory(cat, from: d['from'] as String?, to: d['to'] as String?);
+                    state.setCategory(d.cat, from: d.from, to: d.to);
                   }
                 },
                 child: Row(
                   children: [
-                    Doodle(d['doodle'] as DoodleKind, size: 20),
+                    Doodle(d.doodle, size: 20),
                     const SizedBox(width: 5),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(d['a'] as String,
+                          Text(d.a,
                               style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: C.ink,
                                   height: 1.1)),
-                          Text('↓ ${d['b']}',
+                          Text('↓ ${d.b}',
                               style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
