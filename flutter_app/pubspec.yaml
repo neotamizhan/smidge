@@ -1,7 +1,7 @@
 name: smidge
 description: A tiny, careful unit converter. No ads, no chatter — just the answer.
 publish_to: 'none'
-version: 1.0.1+1
+version: 1.0.2+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -11,10 +11,10 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.2.2
-  google_fonts: ^6.2.1
+  google_fonts: ^8.1.0
 
 dev_dependencies:
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.1
